@@ -22,6 +22,7 @@ import requests
 # ============================================================
 
 # Archivo donde están guardados los rostros entrenados
+
 ARCHIVO_ENCODINGS = "encodings_rostros.pkl"
 
 # URL RTSP de la cámara EZVIZ
@@ -114,12 +115,14 @@ fps = 0
 # FUNCIÓN PARA MARCAR ASISTENCIA
 # ============================================================
 
-def marcar_asistencia_api(iddocente):
-    url = "https://tudominio.com/registrar_asistencia.php"
+def marcar_asistencia_api(dnidocente,iddocente):
+   # url = "https://tudominio.com/registrar_asistencia.php"
+    url = "https://intranet.premiumcollege.edu.pe/appasistencia/regasi.php?modo=dni&token=acm1ptbt"
+#APIASISTENCIA_URL = "https://intranet.premiumcollege.edu.pe/appasistencia/regasi.php?modo=dni&token=acm1ptbt&cod=&id="
 
     datos = {
-        "token": "MI_TOKEN_SECRETO_123",
-        "iddocente": iddocente
+        "cod": dnidocente,
+        "id": iddocente
     }
 
     try:
@@ -340,7 +343,7 @@ def hilo_reconocimiento():
                 if iddocente not in ultimo_marcado:
                     threading.Thread(
                         target=marcar_asistencia_api,
-                        args=(iddocente,),
+                        args=(codigo,iddocente,),
                         daemon=True
                     ).start()
 
@@ -352,7 +355,7 @@ def hilo_reconocimiento():
                     if segundos >= TIEMPO_ENTRE_MARCAS:
                         threading.Thread(
                             target=marcar_asistencia_api,
-                            args=(iddocente,),
+                            args=(codigo,iddocente,),
                             daemon=True
                         ).start()
 
