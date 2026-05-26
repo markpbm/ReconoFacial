@@ -13,10 +13,9 @@ import time                     # Control de tiempo
 import pickle                   # Cargar archivos .pkl
 import numpy as np              # Operaciones matemáticas
 import face_recognition         # Reconocimiento facial
-import mysql.connector          # Conexión MySQL
 import threading                # Hilos para mejorar rendimiento
 from datetime import datetime   # Fecha y hora actual
-
+import requests
 
 # ============================================================
 # CONFIGURACIÓN GENERAL DEL SISTEMA
@@ -51,23 +50,6 @@ MAX_FALLOS_CAMARA = 10
 
 # Mostrar FPS en pantalla
 MOSTRAR_FPS = True
-
-
-# ============================================================
-# CONEXIÓN A MYSQL
-# ============================================================
-
-conexion = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="premiumc_pcoll",
-    autocommit=True
-)
-
-# Cursor para ejecutar consultas SQL
-cursor = conexion.cursor(dictionary=True)
-
 
 # ============================================================
 # CARGAR ROSTROS ENTRENADOS
@@ -109,8 +91,11 @@ frame_procesado = None
 # Lock para evitar conflictos entre hilos
 lock_frame = threading.Lock()
 
-# Personas ya marcadas en esta sesión
-marcados_en_sesion = set()
+# Control para no enviar muchas marcas seguidas del mismo docente
+ultimo_marcado = {}
+
+# Tiempo mínimo entre llamadas a la API por docente
+TIEMPO_ENTRE_MARCAS = 60
 
 # Última persona reconocida
 ultima_persona_reconocida = None
@@ -129,40 +114,30 @@ fps = 0
 # FUNCIÓN PARA MARCAR ASISTENCIA
 # ============================================================
 
-def marcar_asistencia(id_persona):
+def marcar_asistencia_api(iddocente):
+    url = "https://tudominio.com/registrar_asistencia.php"
 
-    # Obtener fecha y hora actual
-    hoy = datetime.now().date()
-    hora = datetime.now().time()
+    datos = {
+        "token": "MI_TOKEN_SECRETO_123",
+        "iddocente": iddocente
+    }
 
     try:
+        respuesta = requests.post(url, data=datos, timeout=10)
 
-        # Consulta SQL
-        sql = """
-        INSERT INTO asist_asistencia
-        (id_persona, fecha, hora, estado)
-        VALUES (%s, %s, %s, %s)
-        """
+        if respuesta.status_code != 200:
+            print("Error HTTP:", respuesta.status_code)
+            print(respuesta.text)
+            return None
 
-        # Valores a insertar
-        valores = (
-            id_persona,
-            hoy,
-            hora,
-            "Presente"
-        )
+        resultado = respuesta.json()
 
-        # Ejecutar SQL
-        cursor.execute(sql, valores)
-
-        print(f"Asistencia registrada -> {id_persona}")
-
-    # Evitar duplicados
-    except mysql.connector.errors.IntegrityError:
-        print(f"Asistencia ya registrada -> {id_persona}")
+        print(resultado.get("mensaje", "Respuesta recibida"))
+        return resultado
 
     except Exception as e:
-        print("Error MySQL:", e)
+        print("Error llamando API:", e)
+        return None
 
 
 # ============================================================
@@ -339,9 +314,9 @@ def hilo_reconocimiento():
 
                 persona = datos_personas[indice_mejor]
 
-                id_persona = persona["id_persona"]
+                iddocente = persona["iddocente"]
                 nombre = persona["nombre"]
-                codigo = persona["codigo"]
+                codigo = persona["dni"]
 
                 # ====================================================
                 # TEXTO A MOSTRAR
@@ -360,16 +335,28 @@ def hilo_reconocimiento():
                 # MARCAR ASISTENCIA
                 # ====================================================
 
-                if id_persona not in marcados_en_sesion:
+                ahora = time.time()
 
+                if iddocente not in ultimo_marcado:
                     threading.Thread(
-                        target=marcar_asistencia,
-                        args=(id_persona,),
+                        target=marcar_asistencia_api,
+                        args=(iddocente,),
                         daemon=True
                     ).start()
 
-                    marcados_en_sesion.add(id_persona)
+                    ultimo_marcado[iddocente] = ahora
 
+                else:
+                    segundos = ahora - ultimo_marcado[iddocente]
+
+                    if segundos >= TIEMPO_ENTRE_MARCAS:
+                        threading.Thread(
+                            target=marcar_asistencia_api,
+                            args=(iddocente,),
+                            daemon=True
+                        ).start()
+
+                        ultimo_marcado[iddocente] = ahora
             # ====================================================
             # ESCALAR COORDENADAS AL TAMAÑO ORIGINAL
             # ====================================================
@@ -514,8 +501,5 @@ while True:
 # ============================================================
 
 cv2.destroyAllWindows()
-
-cursor.close()
-conexion.close()
 
 print("Sistema finalizado.")

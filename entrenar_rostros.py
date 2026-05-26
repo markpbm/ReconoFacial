@@ -10,7 +10,7 @@ ARCHIVO_ENCODINGS = "encodings_rostros.pkl"
 conexion = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="",
+    password="@Otita2345",
     database="premiumc_pcoll"
 )
 
@@ -54,9 +54,9 @@ for persona in personas:
                 rostros_codificados.append(codificaciones[0])
 
                 datos_personas.append({
-                    "id_persona": persona["dni"],
+                    "idDocente": persona["idDocente"],
+                    "dni": persona["dni"],
                     "nombre": persona["nomb"],
-                    "codigo": persona["idDocente"],
                     "cargo": persona["descrCargo"],
                     "area": persona["detalle"],
                     "ruta_imagen": ruta_imagen
