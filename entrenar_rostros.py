@@ -10,13 +10,13 @@ ARCHIVO_ENCODINGS = "encodings_rostros.pkl"
 conexion = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="@Otita2345",
-    database="reconocimiento_facial"
+    password="",
+    database="premiumc_pcoll"
 )
 
 cursor = conexion.cursor(dictionary=True)
 
-cursor.execute("SELECT * FROM persona")
+cursor.execute("SELECT d.idDocente,d.dni,d.nomb,d.detalle,c.descrCargo FROM docente d left join cargo c on d.idtipo=c.idcargo where d.est='1';")
 personas = cursor.fetchall()
 
 
@@ -25,13 +25,13 @@ datos_personas = []
 
 
 for persona in personas:
-    ruta = persona["ruta_foto"]
+    ruta = "./src/docentes/"+persona["dni"]
 
     if not os.path.exists(ruta):
         print(f"No existe la ruta: {ruta}")
         continue
 
-    print(f"\nProcesando: {persona['nombre']}")
+    print(f"\nProcesando: {persona['nomb']}")
 
     for archivo in os.listdir(ruta):
         if archivo.lower().endswith((".jpg", ".jpeg", ".png")):
@@ -54,11 +54,11 @@ for persona in personas:
                 rostros_codificados.append(codificaciones[0])
 
                 datos_personas.append({
-                    "id_persona": persona["id_persona"],
-                    "nombre": persona["nombre"],
-                    "codigo": persona["codigo"],
-                    "cargo": persona["cargo"],
-                    "area": persona["area"],
+                    "id_persona": persona["dni"],
+                    "nombre": persona["nomb"],
+                    "codigo": persona["idDocente"],
+                    "cargo": persona["descrCargo"],
+                    "area": persona["detalle"],
                     "ruta_imagen": ruta_imagen
                 })
 

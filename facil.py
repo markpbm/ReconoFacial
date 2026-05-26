@@ -15,8 +15,8 @@ from datetime import datetime
 conexion = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="@Otita2345",
-    database="reconocimiento_facial"
+    password="",
+    database="premiumc_pcoll"
 )
 
 cursor = conexion.cursor(dictionary=True)
@@ -62,7 +62,7 @@ def marcar_asistencia(id_persona):
 
     try:
         sql = """
-        INSERT INTO asistencia (id_persona, fecha, hora, estado)
+        INSERT INTO asist_asistencia (id_persona, fecha, hora, estado)
         VALUES (%s, %s, %s, %s)
         """
 
@@ -91,7 +91,7 @@ def guardar_foto_pendiente(nombre_persona, frame):
     nombre_archivo = f"captura_{fecha_hora}.jpg"
     ruta_guardado = os.path.join(carpeta, nombre_archivo)
 
-    cv2.imwrite(ruta_guardado, frame)
+  # cv2.imwrite(ruta_guardado, frame)
 
     print(f"Foto pendiente guardada: {ruta_guardado}")
 
@@ -148,10 +148,10 @@ ultimo_guardado_pendiente = 0
 # =========================
 
 # Procesa reconocimiento cada 5 frames para que no se ponga lento
-PROCESAR_CADA_N_FRAMES = 3
+PROCESAR_CADA_N_FRAMES = 5
 
 # Escala 0.35 es balance entre velocidad y detección
-ESCALA = 0.5
+ESCALA = 1
 
 # 1 es más rápido. 2 detecta rostros más pequeños pero es más lento
 UPSAMPLE = 2
