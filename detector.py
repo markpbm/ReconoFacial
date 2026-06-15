@@ -317,7 +317,7 @@ def hilo_reconocimiento():
 
                 persona = datos_personas[indice_mejor]
 
-                iddocente = persona["iddocente"]
+                iddocente = persona["idDocente"]
                 nombre = persona["nombre"]
                 codigo = persona["dni"]
 
